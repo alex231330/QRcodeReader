@@ -30,12 +30,9 @@ import net.sourceforge.zbar.Symbol;
 import net.sourceforge.zbar.SymbolSet;
 
 import java.io.IOException;
-import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-
-/* Import ZBar Class files */
 
 public class MainActivity extends Activity {
     private Camera mCamera;
@@ -56,10 +53,13 @@ public class MainActivity extends Activity {
 
     private Thread th;
     private Date date1;
+    private FrameLayout preview;
 
     static {
         System.loadLibrary("iconv");
     }
+
+    //инициализация объектов (компоненты активити) и переменных
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,15 +77,15 @@ public class MainActivity extends Activity {
         autoFocusHandler = new Handler();
         mCamera = getCameraInstance();
 
-        /* Instance barcode scanner */
+        //инциализация сканнера QR кода
         scanner = new ImageScanner();
         scanner.setConfig(0, Config.X_DENSITY, 3);
         scanner.setConfig(0, Config.Y_DENSITY, 3);
 
+        //инициализцая компонентов активити
         mPreview = new CameraPreview(this, mCamera, previewCb, autoFocusCB);
-        FrameLayout preview = (FrameLayout) findViewById(R.id.cameraPreview);
+        preview = (FrameLayout) findViewById(R.id.cameraPreview);
         preview.addView(mPreview);
-
         nxtName = (EditText) findViewById(R.id.editText);
 
         connectButton = (Button) findViewById(R.id.button);
@@ -101,10 +101,23 @@ public class MainActivity extends Activity {
             }
         });
 
+        //создание нового потока для постостоянного сканирования кода
+
         th = new Thread(new Runnable() {
             @Override
             public void run() {
+//                runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        while (true) {
+//                            if (preview.getVisibility() == View.GONE || preview.getVisibility() == View.INVISIBLE) {
+//                                preview.setVisibility(View.VISIBLE);
+//                            }
+//                        }
+//                    }
+//                });
                 while (true) {
+
                     if (barcodeScanned) {
                         barcodeScanned = false;
                         mCamera.setPreviewCallback(previewCb);
@@ -123,6 +136,8 @@ public class MainActivity extends Activity {
         th.start();
     }
 
+    //обработка событий приложеня
+
     public void onPause() {
         super.onPause();
         //th.stop();
@@ -134,9 +149,8 @@ public class MainActivity extends Activity {
         //th.start();
     }
 
-    /**
-     * A safe way to get an instance of the Camera object.
-     */
+    //инициализация камеры
+
     public static Camera getCameraInstance() {
         Camera c = null;
         try {
@@ -146,8 +160,11 @@ public class MainActivity extends Activity {
         return c;
     }
 
+    //условие отчиски камеры
+
     private void releaseCamera() {
         if (mCamera != null) {
+
             previewing = false;
             mCamera.setPreviewCallback(null);
             mCamera.release();
@@ -162,6 +179,10 @@ public class MainActivity extends Activity {
         }
     };
 
+    boolean stat = true;
+
+    //обработка события на камере
+
     PreviewCallback previewCb = new PreviewCallback() {
         public void onPreviewFrame(byte[] data, Camera camera) {
             Camera.Parameters parameters = camera.getParameters();
@@ -171,7 +192,8 @@ public class MainActivity extends Activity {
             barcode.setData(data);
 
             int result = scanner.scanImage(barcode);
-
+            stat = true;
+            //если найден QR код
             if (result != 0) {
                 previewing = false;
                 mCamera.setPreviewCallback(null);
@@ -179,7 +201,6 @@ public class MainActivity extends Activity {
 
                 SymbolSet syms = scanner.getResults();
                 String text = null;
-                boolean stat = true;
                 for (Symbol sym : syms) {
                     text = sym.getData();
                     Log.d("QRS", text);
@@ -191,36 +212,40 @@ public class MainActivity extends Activity {
                         d.setDate(Integer.parseInt(strs[1]));
 
                         if (d.getTime() > date1.getTime()) {
-                            try {
+                            /*try {
                                 nxt.sendDirectCommand(new byte[]{(byte) 0x80, (byte) 0x09, 0, 58, 1});
                             } catch (IOException e) {
                                 e.printStackTrace();
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
-                            }
-                            Log.d("BT", "sent 1!");
+                            }*/
+                            Log.d("BT", "sent 1!" + stat);
                         } else {
-                            try {
+                            /*try {
                                 nxt.sendDirectCommand(new byte[]{(byte) 0x80, (byte) 0x09, 0, 58, 0});
                             } catch (IOException e) {
                                 e.printStackTrace();
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
-                            }
-                            Log.d("BT", "sent 0!");
+                            }*/
+                            preview.setVisibility(View.GONE);
+                            stat = false;
+                            Log.d("BT", "sent 0!" + stat);
                         }
-                        stat = false;
                     }
 
                     barcodeScanned = true;
+                    stat = true;
                 }
-                stat = true;
 
+            } else {
+                preview.setVisibility(View.VISIBLE);
             }
         }
     };
 
-    // Mimic continuous auto-focusing
+
+    // Объявление использования автофокуса
     AutoFocusCallback autoFocusCB = new AutoFocusCallback() {
         public void onAutoFocus(boolean success, Camera camera) {
             autoFocusHandler.postDelayed(doAutoFocus, 1000);

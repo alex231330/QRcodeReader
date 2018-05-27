@@ -5,6 +5,7 @@
       <module fileurl="file://$PROJECT_DIR$/QRcodeReader.iml" filepath="$PROJECT_DIR$/QRcodeReader.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/zbar/zbar.iml" filepath="$PROJECT_DIR$/zbar/zbar.iml" />
+      <module fileurl="file://$PROJECT_DIR$/zbar1/zbar1.iml" filepath="$PROJECT_DIR$/zbar1/zbar1.iml" />
     </modules>
   </component>
 </project>
